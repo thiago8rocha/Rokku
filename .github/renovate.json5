@@ -12,6 +12,15 @@
       "pinDigests": true,
     },
     {
+      // CodeQL's Kotlin extractor rejects Kotlin >= 2.4.20 ("version is too
+      // recent", CLI 2.26.4), which fails the java-kotlin CodeQL build. Hold
+      // Kotlin at 2.4.10 until a CodeQL CLI with 2.4.20 support reaches the
+      // GitHub runners, then drop this rule. See github/codeql "Support
+      // Kotlin 2.4.20".
+      "matchPackageNames": ["/^org\\.jetbrains\\.kotlin(\\.|:|$)/"],
+      "allowedVersions": "<2.4.20",
+    },
+    {
       // These are JitPack forks/custom builds pinned to a specific commit or
       // tag rather than a real release, so Renovate can't resolve/compare
       // versions for them -- keep it from trying (and failing) to look them up.
