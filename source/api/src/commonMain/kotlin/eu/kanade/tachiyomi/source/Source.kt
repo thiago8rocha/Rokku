@@ -196,7 +196,8 @@ interface Source {
         return replace(regexSpecialCharacters, " ")
             .split(regexWhitespace)
             .map { it.replace(regexNumberOnly, "").lowercase() }
-            .filter { it.length > 1 }
+            // Many sources reject searches shorter than 3 characters outright
+            .filter { it.length > 2 }
     }
 
     /**
