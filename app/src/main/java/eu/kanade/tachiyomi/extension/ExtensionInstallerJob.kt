@@ -169,6 +169,13 @@ class ExtensionInstallerJob(val context: Context, workerParams: WorkerParameters
         private const val TAG = "ExtensionInstaller"
 
         /**
+         * Budget for the [KEY_EXTENSION] JSON in a single work request. [androidx.work.Data]
+         * caps the whole payload at 10 KB when serialized; stay well under it to leave room
+         * for the other keys and Data's own framing.
+         */
+        private const val MAX_INPUT_JSON_BYTES = 9_000
+
+        /**
          * Key that defines what should be updated.
          */
         const val KEY_EXTENSION = "extension"
@@ -181,8 +188,10 @@ class ExtensionInstallerJob(val context: Context, workerParams: WorkerParameters
         }
 
         fun startJob(context: Context, info: List<ExtensionManager.ExtensionInfo>, showUpdatedExtension: Int = -1) {
-            // chunked to satisfy input limits
-            val requests = info.chunked(32).map {
+            // Chunked by serialized size to stay under Data's input limit. A fixed item
+            // count isn't safe: ExtensionInfo carries repoUrl/apkUrl, so a batch with long
+            // URLs blows past the 10 KB cap ("Data cannot occupy more than 10240 bytes").
+            val requests = info.chunkedByInputSize().map {
                 OneTimeWorkRequestBuilder<ExtensionInstallerJob>()
                     .addTag(TAG)
                     .setInputData(
@@ -203,6 +212,28 @@ class ExtensionInstallerJob(val context: Context, workerParams: WorkerParameters
                 workContinuation = workContinuation.then(requests[i])
             }
             workContinuation.enqueue()
+        }
+
+        /**
+         * Splits the list so each chunk's serialized JSON stays under [MAX_INPUT_JSON_BYTES].
+         * An oversized single entry still gets its own chunk rather than being dropped.
+         */
+        private fun List<ExtensionManager.ExtensionInfo>.chunkedByInputSize(): List<List<ExtensionManager.ExtensionInfo>> {
+            val chunks = mutableListOf<List<ExtensionManager.ExtensionInfo>>()
+            var chunk = mutableListOf<ExtensionManager.ExtensionInfo>()
+            var chunkBytes = 2 // enclosing [ ]
+            for (info in this) {
+                val infoBytes = Json.encodeToString(info).toByteArray().size + 1 // + separator
+                if (chunk.isNotEmpty() && chunkBytes + infoBytes > MAX_INPUT_JSON_BYTES) {
+                    chunks += chunk
+                    chunk = mutableListOf()
+                    chunkBytes = 2
+                }
+                chunk += info
+                chunkBytes += infoBytes
+            }
+            if (chunk.isNotEmpty()) chunks += chunk
+            return chunks
         }
 
         fun activeInstalls(): List<String>? = instance?.get()?.activeInstalls

@@ -14,6 +14,7 @@ The format is simplified version of [Keep a Changelog](https://keepachangelog.co
 - An automatic backup that fails because its saved location is no longer accessible (folder deleted, permission revoked, storage removed) now shows a notification telling you to pick a new one, instead of failing silently
 
 ### Fixes
+- Fixed a crash when updating all extensions with many updates pending (the work request's input data exceeded its size limit)
 - Fixed the library update job silently failing (and spamming Crashlytics) when the OS refused to promote it to a foreground service
 - Fixed a crash opening a chapter in the webtoon reader when its saved resume position was out of range
 - Fixed a crash sharing a reader page when its cached image had already been evicted from disk
