@@ -69,12 +69,14 @@ class RecentMangaAdapter(val delegate: RecentsInterface) :
     override fun getItemId(position: Int): Long {
         return when (val item = getItem(position)) {
             is RecentMangaHeaderItem -> HEADER_ID_BASE - item.recentsType
+
             is RecentMangaItem ->
                 if (item.mch.manga.id == null) {
                     FOOTER_ID_BASE - ((item.header as? RecentMangaHeaderItem)?.recentsType ?: 0)
                 } else {
                     item.chapter.id ?: RecyclerView.NO_ID
                 }
+
             else -> RecyclerView.NO_ID
         }
     }
