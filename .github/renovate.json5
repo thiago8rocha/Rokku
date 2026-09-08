@@ -21,6 +21,18 @@
       "allowedVersions": "<2.4.20",
     },
     {
+      // moko-resources 0.27.0 stops exposing some i18n strings to consuming
+      // modules (core:main fails: "Unresolved reference 'webview_is_required'"
+      // etc.). Hold at 0.26.x until the cross-module resource regression is
+      // sorted out, then drop this rule.
+      "matchPackageNames": [
+        "dev.icerock.moko:resources",
+        "dev.icerock.moko:resources-compose",
+        "dev.icerock.mobile.multiplatform-resources",
+      ],
+      "allowedVersions": "<0.27.0",
+    },
+    {
       // These are JitPack forks/custom builds pinned to a specific commit or
       // tag rather than a real release, so Renovate can't resolve/compare
       // versions for them -- keep it from trying (and failing) to look them up.
