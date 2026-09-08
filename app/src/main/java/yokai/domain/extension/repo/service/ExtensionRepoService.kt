@@ -37,7 +37,9 @@ class ExtensionRepoService(
                     .awaitSuccess()
                     .parseAs<ExtensionRepoMetaDto>()
             } catch (e: Exception) {
-                Logger.e(e) { "Failed to fetch repo details" }
+                // Handled: caller falls back to the legacy index. A dead/misconfigured repo
+                // (404, HTML instead of JSON, timeout) is not a Rokku bug - log, don't report.
+                Logger.w(e) { "Failed to fetch repo details" }
                 null
             }
         }

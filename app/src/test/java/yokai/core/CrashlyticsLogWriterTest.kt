@@ -8,7 +8,9 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.io.InterruptedIOException
 import java.net.ProtocolException
+import java.net.SocketTimeoutException
 
 class CrashlyticsLogWriterTest {
 
@@ -56,6 +58,21 @@ class CrashlyticsLogWriterTest {
         ignored(HttpException(403)) shouldBe true
         ignored(HttpException(500)) shouldBe true
         ignored(HttpException(418)) shouldBe false
+    }
+
+    @Test
+    fun `call timeouts and cancellations are ignored`() {
+        ignored(SocketTimeoutException("timeout")) shouldBe true
+        ignored(InterruptedIOException("timeout")) shouldBe true
+        ignored(IOException("Canceled")) shouldBe true
+    }
+
+    @Test
+    fun `source, cover file and local library conditions are ignored`() {
+        ignored(IOException("Can't open InputStream")) shouldBe true
+        ignored(Exception("Timed out waiting for WebView after 30s")) shouldBe true
+        ignored(Exception("The Amazing Spider-Man (1962 - 1995) is not a valid directory")) shouldBe true
+        ignored(Exception("Unrecognized archive format")) shouldBe true
     }
 
     @Test

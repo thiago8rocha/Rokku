@@ -56,7 +56,9 @@ internal class ExtensionApi {
             (storeExtensions ?: fetchLegacyExtensions(repoBaseUrl))
                 .filter { it.libVersion in ExtensionLoader.SUPPORTED_LIB_VERSIONS }
         } catch (e: Throwable) {
-            Logger.e(e) { "Failed to get extensions from $repoBaseUrl" }
+            // Handled: this repo just contributes no extensions this refresh. A dead or
+            // misconfigured repo (404, HTML, timeout) is not a Rokku bug.
+            Logger.w(e) { "Failed to get extensions from $repoBaseUrl" }
             emptyList()
         }
     }
@@ -101,7 +103,8 @@ internal class ExtensionApi {
 
             extensionList.toExtensions(repoBaseUrl)
         } catch (e: Throwable) {
-            Logger.e(e) { "Failed to get store extensions from $indexUrl" }
+            // Handled: caller falls back to the legacy index.
+            Logger.w(e) { "Failed to get store extensions from $indexUrl" }
             null
         }
     }

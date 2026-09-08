@@ -23,9 +23,9 @@ import kotlinx.serialization.SerializationException
 import org.jsoup.HttpStatusException
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.io.InterruptedIOException
 import java.net.ConnectException
 import java.net.SocketException
-import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import javax.net.ssl.SSLException
 
@@ -101,6 +101,14 @@ class CrashlyticsLogWriter : LogWriter() {
      * manga / deep-link path resolving to an uninstalled source (SourceNotFoundException), and
      * an online reader page's disk-cache entry being evicted between listing and reading it
      * (FileNotFoundException under chapter_disk_cache - the page just reloads).
+     *
+     * Also skips: any InterruptedIOException (an okhttp call timeout or cancellation - covers
+     * the former SocketTimeoutException too), an okhttp connection dropped mid-request
+     * (ConnectionShutdownException, "Canceled"), a local cover file that can't be opened
+     * ("Can't open InputStream" - moved/permission revoked), a Cloudflare/WebView challenge
+     * that never resolved ("Timed out waiting for WebView"), and a local-library entry whose
+     * folder is gone or holds a non-archive file ("… is not a valid directory",
+     * "Unrecognized archive format").
      */
     internal fun Throwable.isIgnoredForCrashlytics(): Boolean {
         var current: Throwable? = this
@@ -108,7 +116,7 @@ class CrashlyticsLogWriter : LogWriter() {
             when (current) {
                 is CancellationException,
                 is UnknownHostException,
-                is SocketTimeoutException,
+                is InterruptedIOException, // also covers SocketTimeoutException (a call timeout or cancellation, never a bug)
                 is ConnectException,
                 is SocketException,
                 is SSLException,
@@ -137,7 +145,9 @@ class CrashlyticsLogWriter : LogWriter() {
                 is IOException -> if (
                     current.message?.contains("SETTINGS preface") == true ||
                     current.message == "Unauthorized" ||
+                    current.message == "Canceled" ||
                     current.message == "Chapter locked" ||
+                    current.message == "Can't open InputStream" ||
                     current.message == "Failed to bypass Cloudflare" ||
                     current.message?.startsWith("stream was reset: ") == true ||
                     current.message?.startsWith("Too many follow-up requests") == true ||
@@ -166,7 +176,13 @@ class CrashlyticsLogWriter : LogWriter() {
             }
 
             if (current.message == "Refresh Chapter List" || current.message == "Could not find manga") return true
+            // A source's Cloudflare/WebView challenge not resolving in time, or a local-library
+            // folder that was renamed/deleted or has a non-archive file in it - not a Rokku bug.
+            if (current.message?.startsWith("Timed out waiting for WebView") == true) return true
+            if (current.message?.endsWith("is not a valid directory") == true) return true
+            if (current.message == "Unrecognized archive format") return true
             if (current.javaClass.simpleName == "ForegroundServiceStartNotAllowedException") return true
+            if (current.javaClass.simpleName == "ConnectionShutdownException") return true
 
             current = current.cause?.takeIf { it !== current }
         }
