@@ -704,10 +704,14 @@ class PagerPageHolder(
         val imageBitmap = try {
             BitmapFactory.decodeStream(imageSource.peek().inputStream())
         } catch (e: Exception) {
+            Logger.e { "Cannot combine pages ${e.message}" }
+            null
+        }
+        if (imageBitmap == null) {
+            // decodeStream returns null (not throws) on a corrupt/undecodable stream
             closeSources(imageSource2)
             page.fullPage = true
             splitDoublePages()
-            Logger.e { "Cannot combine pages ${e.message}" }
             return supportHingeIfThere(imageSource)
         }
         scope.launchUI { progressIndicator.setProgress(96) }
