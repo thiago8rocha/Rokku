@@ -2,6 +2,7 @@ package eu.kanade.tachiyomi.ui.recents
 
 import android.view.View
 import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView
 import eu.davidea.flexibleadapter.items.IFlexible
 import eu.kanade.tachiyomi.core.preference.Preference
 import eu.kanade.tachiyomi.data.database.models.Chapter
@@ -57,6 +58,25 @@ class RecentMangaAdapter(val delegate: RecentsInterface) :
 
     init {
         setDisplayHeadersAtStartUp(true)
+    }
+
+    /**
+     * Give headers, footers and chapter rows disjoint stable-id ranges. FlexibleAdapter's
+     * default stable id is the item's hashCode(); RecentMangaHeaderItem and the footer hash
+     * to small ints (0..2) that collide with chapter rows whose id hashes into the same
+     * range, crashing RecyclerView with "Two different ViewHolders have the same stable ID".
+     */
+    override fun getItemId(position: Int): Long {
+        return when (val item = getItem(position)) {
+            is RecentMangaHeaderItem -> HEADER_ID_BASE - item.recentsType
+            is RecentMangaItem ->
+                if (item.mch.manga.id == null) {
+                    FOOTER_ID_BASE - ((item.header as? RecentMangaHeaderItem)?.recentsType ?: 0)
+                } else {
+                    item.chapter.id ?: RecyclerView.NO_ID
+                }
+            else -> RecyclerView.NO_ID
+        }
     }
 
     fun setPreferenceFlows() {
@@ -128,5 +148,12 @@ class RecentMangaAdapter(val delegate: RecentsInterface) :
         OnlyDownloaded,
         UnreadOrDownloaded,
         All,
+    }
+
+    private companion object {
+        // Chapter rows use their (always positive) chapter id; keep headers/footers well
+        // clear of that range and of RecyclerView.NO_ID (-1).
+        const val HEADER_ID_BASE = -1000L
+        const val FOOTER_ID_BASE = -2000L
     }
 }

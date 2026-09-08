@@ -15,6 +15,7 @@ The format is simplified version of [Keep a Changelog](https://keepachangelog.co
 
 ### Fixes
 - Fixed a crash when updating all extensions with many updates pending (the work request's input data exceeded its size limit)
+- Fixed a rare crash in Recents ("Two different ViewHolders have the same stable ID") caused by a section header's id colliding with a chapter row's
 - Fixed the library update job silently failing (and spamming Crashlytics) when the OS refused to promote it to a foreground service
 - Fixed a crash opening a chapter in the webtoon reader when its saved resume position was out of range
 - Fixed a crash sharing a reader page when its cached image had already been evicted from disk
