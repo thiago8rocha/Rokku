@@ -28,6 +28,7 @@ class CrashlyticsLogWriterTest {
     fun `transient network conditions surfaced as IOException messages are ignored`() {
         ignored(IOException("stream was reset: PROTOCOL_ERROR")) shouldBe true
         ignored(IOException("stream was reset: CANCEL")) shouldBe true
+        ignored(IOException("unexpected end of stream on https://example.org/...")) shouldBe true
         ignored(ProtocolException("Too many follow-up requests: 21")) shouldBe true
         ignored(IOException("Failed to bypass Cloudflare")) shouldBe true
         ignored(IOException("Chapter locked")) shouldBe true

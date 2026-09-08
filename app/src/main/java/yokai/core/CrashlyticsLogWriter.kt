@@ -151,6 +151,7 @@ class CrashlyticsLogWriter : LogWriter() {
                     current.message == "Failed to bypass Cloudflare" ||
                     current.message?.startsWith("stream was reset: ") == true ||
                     current.message?.startsWith("Too many follow-up requests") == true ||
+                    current.message?.startsWith("unexpected end of stream on ") == true ||
                     current.message?.matches(HTTP_STATUS_MESSAGE) == true
                 ) {
                     return true
